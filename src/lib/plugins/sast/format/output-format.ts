@@ -166,7 +166,7 @@ export function getPrefix(path: string): string {
 
 export function getCodeReportDisplayedOutput(projectUrl: string): string {
   return (
-    chalk.bold('Report Complete') +
+    chalk.bold('Code Report Complete') +
     EOL +
     EOL +
     'Your test results are available at:' +

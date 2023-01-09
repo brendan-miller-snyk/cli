@@ -19,13 +19,13 @@ export async function uploadCodeReport(args: CodeUploadArgs): Promise<string> {
 
   const uploadResultsRes = await uploadResults(args);
 
-  return getCodeReportDisplayedOutput(
-    `${config.ROOT}/org/${args.org}/project/${uploadResultsRes.projectPublicId}`,
-  );
+  return getCodeReportDisplayedOutput(uploadResultsRes.projectUrl);
 }
 
 type UploadResultsOutput = {
   projectPublicId: string;
+  snapshotPublicId: string;
+  projectUrl: string;
 };
 
 async function uploadResults({
@@ -55,5 +55,9 @@ async function uploadResults({
     );
   }
 
-  return { projectPublicId: body.projectPublicId };
+  return {
+    projectPublicId: body.projectPublicId,
+    snapshotPublicId: body.snapshotPublicId,
+    projectUrl: body.projectUrl,
+  };
 }
