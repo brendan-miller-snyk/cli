@@ -10,8 +10,9 @@ const debug = Debug('snyk-code-upload-report');
 
 type CodeUploadArgs = {
   org: string | null;
-  results: Log;
   projectName: string;
+  targetRef?: string;
+  results: Log;
 };
 
 export async function uploadCodeReport(args: CodeUploadArgs): Promise<string> {
@@ -32,6 +33,7 @@ async function uploadResults({
   org,
   results,
   projectName,
+  targetRef = '',
 }: CodeUploadArgs): Promise<UploadResultsOutput> {
   const { res, body } = await makeRequest({
     method: 'POST',
@@ -43,6 +45,7 @@ async function uploadResults({
     },
     body: {
       projectName,
+      targetRef,
       results,
     },
   });

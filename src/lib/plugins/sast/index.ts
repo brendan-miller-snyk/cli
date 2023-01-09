@@ -64,10 +64,14 @@ export const codePlugin: EcosystemPlugin = {
           throw new FailedToRunTestError('No project name specified');
         }
 
+        // TODO: sanitisation/slugify
+        const targetRef = options['target-reference'];
+
         readableResult = await uploadCodeReport({
           org: newOrg ?? null,
-          results: sarifTypedResult,
           projectName,
+          targetRef,
+          results: sarifTypedResult,
         });
       } else {
         const meta = getMeta({ ...options, org: newOrg }, path);
