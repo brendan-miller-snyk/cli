@@ -58,10 +58,12 @@ export const codePlugin: EcosystemPlugin = {
       // TODO: separate flows in order to do analysis orchestration in API and not send issue data from client.
       // TODO: Better define what happens to other options like JSON/Sarif output when this is set.
       if (options.report) {
+        const projectId = options['project-id'];
         // TODO: what kind of sanitisation does this need? What characters are supported? Should it be slug-ified?
         const projectName = options['project-name'];
-        if (!projectName || projectName?.trim().length === 0) {
-          throw new FailedToRunTestError('No project name specified');
+
+        if (!projectId && (!projectName || projectName?.trim().length === 0)) {
+          throw new FailedToRunTestError('No project ID or name specified');
         }
 
         // TODO: sanitisation/slugify
@@ -69,6 +71,7 @@ export const codePlugin: EcosystemPlugin = {
 
         readableResult = await uploadCodeReport({
           org: newOrg ?? null,
+          projectId,
           projectName,
           targetRef,
           results: sarifTypedResult,

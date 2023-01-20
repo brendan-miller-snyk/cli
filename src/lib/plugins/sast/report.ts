@@ -10,7 +10,8 @@ const debug = Debug('snyk-code-upload-report');
 
 type CodeUploadArgs = {
   org: string | null;
-  projectName: string;
+  projectId?: string;
+  projectName?: string;
   targetRef?: string;
   results: Log;
 };
@@ -32,6 +33,7 @@ type UploadResultsOutput = {
 async function uploadResults({
   org,
   results,
+  projectId,
   projectName,
   targetRef = '',
 }: CodeUploadArgs): Promise<UploadResultsOutput> {
@@ -44,6 +46,7 @@ async function uploadResults({
       authorization: getAuthHeader(),
     },
     body: {
+      projectId,
       projectName,
       targetRef,
       results,
