@@ -11,7 +11,7 @@ const debug = debugModule('snyk');
 
 export async function findAndLoadPolicy(
   root: string,
-  scanType: SupportedPackageManagers | 'docker' | 'iac' | 'cpp',
+  scanType: SupportedPackageManagers | 'docker' | 'iac' | 'cpp' | 'code',
   options: PolicyOptions,
   pkg?: PackageExpanded,
   scannedProjectFolder?: string,

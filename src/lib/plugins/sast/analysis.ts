@@ -2,14 +2,16 @@ import {
   analyzeFolders,
   AnalysisSeverity,
   MAX_FILE_SIZE,
+  FileAnalysis,
+  AnalysisResultSarif,
 } from '@snyk/code-client';
 import { ReportingDescriptor, Result } from 'sarif';
 import { SEVERITY } from '../../snyk-test/legacy';
-import { api } from '../../api-token';
+import { api, getAuthHeader } from '../../api-token';
 import config from '../../config';
 import { spinner } from '../../spinner';
 import { Options } from '../../types';
-import { SastSettings, Log } from './types';
+import { SastSettings, Log, CodeTestResults } from './types';
 import { analysisProgressUpdate } from './utils';
 import {
   FeatureNotSupportedBySnykCodeError,
@@ -23,22 +25,33 @@ import { getCodeClientProxyUrl } from '../../code-config';
 
 const debug = debugLib('snyk-code');
 
-export async function getCodeAnalysisAndParseResults(
+export async function getCodeTestResults(
   root: string,
   options: Options,
   sastSettings: SastSettings,
   requestId: string,
-): Promise<Log | null> {
+): Promise<CodeTestResults | null> {
   await spinner.clearAll();
+
   analysisProgressUpdate();
+
   const codeAnalysis = await getCodeAnalysis(
     root,
     options,
     sastSettings,
     requestId,
   );
+
   spinner.clearAll();
-  return parseSecurityResults(codeAnalysis);
+
+  if (!codeAnalysis) {
+    return null;
+  }
+
+  return {
+    reportResults: codeAnalysis.reportResults,
+    analysisResults: codeAnalysis.analysisResults as AnalysisResultSarif,
+  };
 }
 
 async function getCodeAnalysis(
@@ -46,7 +59,7 @@ async function getCodeAnalysis(
   options: Options,
   sastSettings: SastSettings,
   requestId: string,
-): Promise<Log | null> {
+): Promise<FileAnalysis | null> {
   const isLocalCodeEngineEnabled = isLocalCodeEngine(sastSettings);
   if (isLocalCodeEngineEnabled) {
     validateLocalCodeEngineUrl(sastSettings.localCodeEngine.url);
@@ -81,10 +94,21 @@ async function getCodeAnalysis(
   const severity = options.severityThreshold
     ? severityToAnalysisSeverity(options.severityThreshold)
     : AnalysisSeverity.info;
+
   const result = await analyzeFolders({
-    connection: { baseURL, sessionToken, source, requestId },
+    connection: {
+      baseURL,
+      sessionToken,
+      source,
+      requestId,
+    },
     analysisOptions: { severity },
     fileOptions: { paths: [root] },
+    reportOptions: {
+      enabled: options.report ?? false,
+      projectName: options['project-name'],
+      targetRef: options['target-reference'],
+    },
     analysisContext: {
       initiator: 'CLI',
       flow: source,
@@ -111,10 +135,15 @@ async function getCodeAnalysis(
     );
   }
 
-  if (result?.analysisResults.type === 'sarif') {
-    return result.analysisResults.sarif;
+  if (!result || result?.analysisResults.type !== 'sarif') {
+    return null;
   }
-  return null;
+
+  result.analysisResults.sarif = parseSecurityResults(
+    result.analysisResults.sarif,
+  );
+
+  return result;
 }
 
 function severityToAnalysisSeverity(severity: SEVERITY): AnalysisSeverity {
@@ -129,12 +158,8 @@ function severityToAnalysisSeverity(severity: SEVERITY): AnalysisSeverity {
   return severityLevel[severity];
 }
 
-function parseSecurityResults(codeAnalysis: Log | null): Log | null {
+function parseSecurityResults(codeAnalysis: Log): Log {
   let securityRulesMap;
-
-  if (!codeAnalysis) {
-    return codeAnalysis;
-  }
 
   const rules = codeAnalysis.runs[0].tool.driver.rules;
   const results = codeAnalysis.runs[0].results;

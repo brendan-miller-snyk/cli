@@ -17,7 +17,7 @@ import { jsonStringifyLargeObject } from '../../../../src/lib/json';
 import { ArgsOptions } from '../../../../src/cli/args';
 import * as codeConfig from '../../../../src/lib/code-config';
 
-const { getCodeAnalysisAndParseResults } = analysis;
+const { getCodeTestResults } = analysis;
 import osName = require('os-name');
 
 describe('Test snyk code', () => {
@@ -626,7 +626,7 @@ describe('Test snyk code', () => {
         apiName: '/some-api',
       };
       jest
-        .spyOn(analysis, 'getCodeAnalysisAndParseResults')
+        .spyOn(analysis, 'getCodeTestResults')
         .mockRejectedValue(codeClientError);
       isSastEnabledForOrgSpy.mockResolvedValueOnce({
         sastEnabled: true,
@@ -653,7 +653,7 @@ describe('Test snyk code', () => {
     };
 
     jest
-      .spyOn(analysis, 'getCodeAnalysisAndParseResults')
+      .spyOn(analysis, 'getCodeTestResults')
       .mockRejectedValue(codeClientError);
 
     isSastEnabledForOrgSpy.mockResolvedValueOnce({
@@ -708,7 +708,7 @@ describe('Test snyk code', () => {
     const analyzeFoldersSpy = analyzeFoldersMock.mockResolvedValue(
       sampleAnalyzeFoldersResponse,
     );
-    await getCodeAnalysisAndParseResults(
+    await getCodeTestResults(
       '.',
       {
         path: '',
@@ -728,7 +728,7 @@ describe('Test snyk code', () => {
     };
 
     analyzeFoldersMock.mockResolvedValue(sampleAnalyzeFoldersResponse);
-    const actual = await getCodeAnalysisAndParseResults(
+    const actual = await getCodeTestResults(
       '.',
       {
         path: '',
@@ -798,7 +798,7 @@ describe('Test snyk code', () => {
       const analyzeFoldersSpy = analyzeFoldersMock.mockResolvedValue(
         sampleAnalyzeFoldersResponse,
       );
-      await getCodeAnalysisAndParseResults(
+      await getCodeTestResults(
         '.',
         {
           path: '',
@@ -825,7 +825,7 @@ describe('Test snyk code', () => {
     const analyzeFoldersSpy = analyzeFoldersMock.mockResolvedValue(
       sampleAnalyzeFoldersResponse,
     );
-    await getCodeAnalysisAndParseResults(
+    await getCodeTestResults(
       '.',
       {
         path: '',
@@ -847,7 +847,7 @@ describe('Test snyk code', () => {
     };
 
     await expect(
-      getCodeAnalysisAndParseResults(
+      getCodeTestResults(
         '.',
         {
           path: '',

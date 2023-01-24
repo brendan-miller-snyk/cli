@@ -1,7 +1,7 @@
 import chalk from 'chalk';
 import * as debugLib from 'debug';
 import { v4 as uuidv4 } from 'uuid';
-import { getCodeAnalysisAndParseResults } from './analysis';
+import { getCodeTestResults } from './analysis';
 import { getSastSettings } from './settings';
 import {
   getCodeDisplayedOutput,
@@ -12,7 +12,6 @@ import { EcosystemPlugin } from '../../ecosystems/types';
 import { FailedToRunTestError, NoSupportedSastFiles } from '../../errors';
 import { jsonStringifyLargeObject } from '../../json';
 import * as analytics from '../../analytics';
-import { uploadCodeReport } from './report';
 
 const debug = debugLib('snyk-code');
 
@@ -34,66 +33,42 @@ export const codePlugin: EcosystemPlugin = {
       // Currently code supports only one path
       const path = paths[0];
 
-      const sarifTypedResult = await getCodeAnalysisAndParseResults(
+      const testResults = await getCodeTestResults(
         path,
         options,
         sastSettings,
         requestId,
       );
 
-      if (!sarifTypedResult) {
+      if (!testResults) {
         throw new NoSupportedSastFiles();
       }
-      const numOfIssues = sarifTypedResult!.runs?.[0].results?.length || 0;
+
+      const sarifTypedResult = testResults?.analysisResults?.sarif;
+
+      const numOfIssues = sarifTypedResult.runs?.[0].results?.length || 0;
       analytics.add('sast-issues-found', numOfIssues);
       let newOrg = options.org;
       if (!newOrg && sastSettings.org) {
         newOrg = sastSettings.org;
       }
 
-      let readableResult: string;
+      const meta = getMeta({ ...options, org: newOrg }, path);
+      const prefix = getPrefix(path);
+      let readableResult = getCodeDisplayedOutput(
+        testResults,
+        meta,
+        prefix,
+      );
 
-      // Share results (CLI upload)
-      // WIP prototype implementation
-      // TODO: separate flows in order to do analysis orchestration in API and not send issue data from client.
-      // TODO: Better define what happens to other options like JSON/Sarif output when this is set.
-      if (options.report) {
-        const projectId = options['project-id'];
-        // TODO: what kind of sanitisation does this need? What characters are supported? Should it be slug-ified?
-        const projectName = options['project-name'];
-
-        if (!projectId && (!projectName || projectName?.trim().length === 0)) {
-          throw new FailedToRunTestError('No project ID or name specified');
-        }
-
-        // TODO: sanitisation/slugify
-        const targetRef = options['target-reference'];
-
-        readableResult = await uploadCodeReport({
-          org: newOrg ?? null,
-          projectId,
-          projectName,
-          targetRef,
-          results: sarifTypedResult,
+      if (numOfIssues > 0 && options['no-markdown']) {
+        sarifTypedResult.runs?.[0].results?.forEach(({ message }) => {
+          delete message.markdown;
         });
-      } else {
-        const meta = getMeta({ ...options, org: newOrg }, path);
-        const prefix = getPrefix(path);
-        readableResult = getCodeDisplayedOutput(
-          sarifTypedResult!,
-          meta,
-          prefix,
-        );
+      }
 
-        if (numOfIssues > 0 && options['no-markdown']) {
-          sarifTypedResult.runs?.[0].results?.forEach(({ message }) => {
-            delete message.markdown;
-          });
-        }
-
-        if (options.sarif || options.json) {
-          readableResult = jsonStringifyLargeObject(sarifTypedResult);
-        }
+      if (options.sarif || options.json) {
+        readableResult = jsonStringifyLargeObject(sarifTypedResult);
       }
 
       let sarifResult: string | undefined;
