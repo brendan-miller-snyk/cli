@@ -11,6 +11,10 @@ import { assembleQueryString } from '../snyk-test/common';
 import { getAuthHeader } from '../api-token';
 import { resolveAndTestFacts } from './resolve-test-facts';
 import { isUnmanagedEcosystem } from './common';
+import { convertDepGraph, getUnmanagedDepGraph } from './unmanaged/utils';
+import { jsonStringifyLargeObject } from '../json';
+
+type ScanResultsByPath = { [dir: string]: ScanResult[] }
 
 export async function testEcosystem(
   ecosystem: Ecosystem,
@@ -31,7 +35,7 @@ export async function testEcosystem(
       sarifRes,
     );
   }
-  const scanResultsByPath: { [dir: string]: ScanResult[] } = {};
+  const scanResultsByPath: ScanResultsByPath = {};
   for (const path of paths) {
     await spinner(`Scanning dependencies in ${path}`);
     options.path = path;
@@ -39,6 +43,11 @@ export async function testEcosystem(
     scanResultsByPath[path] = pluginResponse.scanResults;
   }
   spinner.clearAll();
+
+  if (isUnmanagedEcosystem(ecosystem) && options['print-graph']) {
+    const [ target ] = paths;
+    return formatUnmanagedResults(scanResultsByPath, target)
+  }
 
   const [testResults, errors] = await selectAndExecuteTestStrategy(
     ecosystem,
@@ -74,6 +83,19 @@ export async function selectAndExecuteTestStrategy(
   return isUnmanagedEcosystem(ecosystem)
     ? await resolveAndTestFacts(ecosystem, scanResultsByPath, options)
     : await testDependencies(scanResultsByPath, options);
+}
+
+export async function formatUnmanagedResults(scanResultsByPath: ScanResultsByPath, target: string): Promise<TestCommandResult> {
+  const [result] = await getUnmanagedDepGraph(scanResultsByPath);
+  const depGraph = convertDepGraph(result);
+
+  const template = `DepGraph data:
+${jsonStringifyLargeObject(depGraph)}
+DepGraph target:
+${target}
+DepGraph end`;
+
+  return TestCommandResult.createJsonTestCommandResult(template);
 }
 
 async function testDependencies(
