@@ -11,6 +11,7 @@ tmp
 .DS_Store
 !/test/fixtures/**/package-lock.json
 .idea
+.vscode
 .eslintcache
 snyk-error.log
 snyk-result.json
