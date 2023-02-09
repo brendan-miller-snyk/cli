@@ -82,7 +82,13 @@ async function getCodeAnalysis(
     ? severityToAnalysisSeverity(options.severityThreshold)
     : AnalysisSeverity.info;
   const result = await analyzeFolders({
-    connection: { baseURL, sessionToken, source, requestId },
+    connection: {
+      baseURL,
+      sessionToken,
+      source,
+      requestId,
+      ...(sastSettings.org && { org: sastSettings.org }),
+    },
     analysisOptions: { severity },
     fileOptions: { paths: [root] },
     analysisContext: {
