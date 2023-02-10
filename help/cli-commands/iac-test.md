@@ -16,8 +16,8 @@ For more information see [Snyk CLI for Infrastructure as Code](https://docs.snyk
 
 Possible exit codes and their meaning:
 
-**0**: success, no vulnerabilities found\
-**1**: action_needed, vulnerabilities found\
+**0**: success (scan completed), no vulnerabilities found\
+**1**: action_needed (scan completed), vulnerabilities found\
 **2**: failure, try to re-run command\
 **3**: failure, no supported projects detected
 
@@ -137,11 +137,13 @@ To clear the project tags set `--project-tags=`
 
 This option is not supported for Integrated IaC (Limited Availability).
 
+For more information including allowable characters see [Project tags](https://docs.snyk.io/snyk-web-ui/introduction-to-snyk-projects/project-tags)
+
 ### `--remote-repo-url=<URL>`
 
 This can be used in combination with the `--report` option.
 
-Set or override the remote URL for the repository.&#x20;
+Set or override the remote URL for the repository.
 
 ### `--report`
 
@@ -182,7 +184,7 @@ Example 2: `--scan=resource-changes` (proposed changes scan)
 
 This can be used in combination with the `--report` option.
 
-Set or override the project name for the repository.&#x20;
+Set or override the project name for the repository.
 
 Note: This option supersedes`--remote-repo-url`, if both options are used together.
 
