@@ -201,7 +201,10 @@ function getSecurityResultsOnly(
 ): Result[] {
   const securityResults = results.reduce((acc: Result[], result: Result) => {
     const securityRule = securityRules.find((sr) => sr === result?.ruleId);
-    if (securityRule) {
+    // TODO: move this out of here - it doesn't belong here and it's a hacky way to do it
+    // This was just the easiest place to put it for a POC
+    const ignored = (result.suppressions?.length ?? 0) > 0;
+    if (securityRule && !ignored) {
       result.ruleIndex = securityRules.indexOf(securityRule);
       acc.push(result);
     }
